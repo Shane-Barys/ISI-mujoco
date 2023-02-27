@@ -1,0 +1,76 @@
+<mujoco model="SimpleJoint">
+    <option timestep="0.005"/>
+
+    <visual>
+        <map force="0.2" zfar="30"/>
+        <rgba haze="0.15 0.25 0.35 1"/>
+        <global offwidth="2560" offheight="1440" elevation="-20" azimuth="120"/>
+    </visual>
+
+    <statistic center="0 0 0.7"/>
+
+    <asset>
+        <texture type="skybox" builtin="gradient" rgb1=".3 .5 .7" rgb2="0 0 0" width="32" height="512"/>
+        <texture name="body" type="cube" builtin="flat" mark="cross" width="127" height="1278" rgb1="0.8 0.6 0.4" rgb2="0.8 0.6 0.4" markrgb="1 1 1" random="0.01"/>
+        <material name="body" texture="body" texuniform="true" rgba="0.8 0.6 .4 1"/>
+        <texture name="grid" type="2d" builtin="checker" width="512" height="512" rgb1=".1 .2 .3" rgb2=".2 .3 .4"/>
+        <material name="grid" texture="grid" texrepeat="1 1" texuniform="true" reflectance=".2"/>
+    </asset>
+
+
+    <default>
+        <motor ctrlrange="-1 1" ctrllimited="true"/>
+    <!--creates geometry classes for a standard shape to call later-->
+        <default class="body">
+            <geom type="capsule" condim="1" friction=".7" solimp=".9 .99 .003" solref=".015 1" material="body"/>
+            <default class="thigh">
+                <geom size=".06"/>
+            </default>
+            <default class="shin">
+                <geom fromto="0 0 0 0 0 -.3"  size=".049"/>
+            </default>
+        </default>
+
+    <!--defines joints-->
+        <joint type="hinge" damping=".2" stiffness="1" armature=".01" limited="true" solimplimit="0 .99 .01"/>
+        <default class="knee">
+            <joint pos="0 0 .02" axis="0 -1 0" range="-160 2"/>
+        </default>
+        <default class="hip_y">
+            <joint axis="0 1 0" range="-150 20"/>
+        </default>
+
+    </default>
+
+
+
+<!--calls standard geometries and places them in world-->
+    <worldbody>
+        <geom name="floor" size="0 0 .05" type="plane" material="grid" condim="3"/>
+        <light name="spotlight" mode="targetbodycom" target="thigh_right" diffuse=".8 .8 .8" specular="0.3 0.3 0.3" pos="0 -6 4" cutoff="30"/>
+            <camera name="back" pos="-3 0 1" xyaxes="0 -1 0 1 0 2" mode="trackcom"/>
+            <camera name="side" pos="0 -3 1" xyaxes="1 0 0 0 1 2" mode="trackcom"/>
+            <!--embedded bodies will have coordinates relative to main-->
+            <body name="thigh_right" pos="0 0 1.282">
+                <joint name="hip_y_right" class="hip_y"/>
+                <geom name="thigh_right" fromto="0 0 0 0 .01 -.34" class="thigh"/>
+                <body name="shin_right" pos="0 .01 -.4">
+                    <joint name="knee_right" class="knee"/>
+                    <geom name="shin_right" class="shin"/>
+                </body>
+            </body>
+    </worldbody>
+
+    <tendon>
+        <fixed name="hamstring_right" limited="true" range="-0.3 2">
+            <joint joint="hip_y_right" coef=".5"/>
+            <joint joint="knee_right" coef="-.5"/>
+        </fixed>
+    </tendon>
+
+    <actuator>
+        <motor name="knee_right"      gear="80"  joint="knee_right"/>
+        <motor name="hip_y_right" gear="80" joint="hip_y_right"/> 
+    </actuator>
+
+</mujoco>
